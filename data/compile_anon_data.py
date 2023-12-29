@@ -120,7 +120,7 @@ for semester in ["2020A", "2020C", "2021A", "2021C", "2022A", "2022C", "2023A", 
             for s in schedule.sections.all()
         }
         sections &= valid_sections
-        est_registration[user_id] = sections - watching[user_id]
+        est_registration[user_id] = sections - set(watching[user_id])
 
     # Anonymize user IDs by shuffling and taking index in list as new ID
     student_ids = list(set(watching.keys()) | set(est_registration.keys()))
