@@ -1,18 +1,27 @@
 """
-NOTE: this export script only works in a `python manage.py shell` context in the
+NOTE: This export script only works in a `python manage.py shell` context in the
 open source Penn Courses Django app:
 https://github.com/pennlabs/penn-courses
 
 It is used to export an approximation of anonymous user course registrations,
-as well as watched sections on Penn Course Alert.
+watched sections on Penn Course Alert, and detailed section information.
 
-Exported Files:
-1. 'watching.pkl': This file contains a dict mapping anonymized student # to set of
-   watched sections (from Penn Course Alert). The data represents the sections that
-   each student was monitoring at the end of the fall 2023 semester.
+Exported Files (each of these dictionaries is parameterized by semester):
+1. 'watching.pkl': This file contains a dictionary mapping anonymized student numbers
+   to a list of watched sections at the end of a specified semester. The sections are 
+   in the chronological order of when each student began monitoring them on Penn Course Alert.
 
-2. 'estimated-registration.pkl': This file contains a dict mapping anonymized student #
-   to set of sections (estimated course registration).
+2. 'section_info.pkl': This file contains a dictionary mapping each section's full code
+   to a dictionary of its details. These details include activity type (as a string),
+   current enrollment count (int), capacity (int), open status (bool), permit requirement
+   status (bool), and meeting times. Meeting times are further detailed in a nested
+   dictionary that includes the day of the week (string), start time (float, formatted as hh.mm),
+   and end time (float, formatted as hh.mm).
+
+3. 'estimated-registration.pkl': This file contains a dictionary mapping anonymized student numbers
+   to a set of sections, representing an estimated course registration for that semester.
+   This data approximates the course selections that each student might have made during
+   the registration period.
 """
 
 
@@ -35,7 +44,7 @@ all_section_info = dict()
 all_watching = dict()
 all_est_registration = dict()
 
-for semester in ["2020A", "2020C", "2021A", "2021C", "2022A", "2022C", "2023A", "2023C"]:
+for semester in ["2020C", "2021A", "2021C", "2022A", "2022C", "2023A", "2023C"]:
     adp = AddDropPeriod.objects.get(semester=semester)
     snapshot_date = adp.estimated_end - timedelta(days=1)
 
@@ -134,12 +143,17 @@ for semester in ["2020A", "2020C", "2021A", "2021C", "2022A", "2022C", "2023A", 
     all_est_registration[semester] = est_registration
 
 # Export watching[semester] (map from anon student # ->
-#   list of watched sections at the end of this semester)
+#   list of watched sections at the end of this semester, in chronological order of watching initiation)
 with open(os.path.expanduser("~/git/course-trading/data/watching.pkl"), "wb") as file:
     pickle.dump(all_watching, file)
 
 # Export section_info[semester] (map from section full_code ->
-#   {activity: string, enrollment: int, capacity: int, open: bool})
+#   {activity: string, enrollment: int, capacity: int, open: bool, permit_required: bool,
+#    meetings: { day: string,
+#                start: float,  # hh:mm is formatted as hh.mm = hh+mm/100
+#                end: float,     # hh:mm is formatted as hh.mm = hh+mm/100
+#               }
+#   })
 with open(os.path.expanduser("~/git/course-trading/data/section_info.pkl"), "wb") as file:
     pickle.dump(all_section_info, file)
 
